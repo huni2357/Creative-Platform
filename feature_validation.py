@@ -118,3 +118,4 @@ def quick_validate(df: pd.DataFrame):
 
     print("✅ quick_validate: OK")
     return True
+
