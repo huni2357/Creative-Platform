@@ -25,7 +25,7 @@ Feature Validation은 입력 데이터의 각 feature(열/컬럼)가 올바른 �
 ```python
 # 함수 호출 결과
 report, df_num, failure_df = validate_feature_table(df)
-
+```
 ### Quick Validate - 아래 코드로 간단하게 확인할 수 있다
 ```python
 def quick_validate(df: pd.DataFrame):
