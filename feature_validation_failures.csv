@@ -1,0 +1,7 @@
+index,column,reason,value
+2,late_night_ratio,ratio_out_of_bounds,1.2
+2,sns_ent_ratio,ratio_out_of_bounds,-0.1
+2,avg_tab_cnt,negative_value,-2.0
+2,session_length_max/session_length_mean,max_less_than_mean,-5.0
+1,late_night_ratio,total_usage_zero_but_ratio_nonzero,0.1
+1,repeat_site_ratio,total_usage_zero_but_ratio_nonzero,0.2

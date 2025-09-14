@@ -1,0 +1,4 @@
+user_id,period_start,period_end,total_usage_daily,total_usage_weekly,late_night_ratio,sns_ent_ratio,session_length_max,session_length_mean,bounce_ratio,avg_tab_cnt,search_freq,repeat_site_ratio
+u1,2025-09-01T00:00:00+09:00,2025-09-02T00:00:00+09:00,180,900,0.2,0.4,60,20,0.3,3,25,0.6
+u2,2025-09-01T00:00:00+09:00,2025-09-02T00:00:00+09:00,0,0,0.1,0.0,0,0,0.0,0,0,0.2
+u3,2025-09-01T00:00:00+09:00,2025-09-02T00:00:00+09:00,240,1200,1.2,-0.1,10,15,0.05,-2,10,0.3
