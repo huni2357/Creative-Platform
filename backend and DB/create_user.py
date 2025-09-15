@@ -1,3 +1,5 @@
+# API 인증의 핵심이 되는 파일
+
 import sqlite3
 import secrets
 
@@ -18,5 +20,4 @@ def create_new_user(user_id):
         print(f"An error occurred: {e}")
 
 if __name__ == '__main__':
-    # 터미널에서 python create_user.py를 실행하면 'test_user'가 생성됩니다.
     create_new_user('test_user_01')

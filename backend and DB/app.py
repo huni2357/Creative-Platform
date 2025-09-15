@@ -1,8 +1,11 @@
+# 서버를 구현하는 토대가 되는 파일
+
 import sqlite3
 from flask import Flask, request, jsonify, g
 from functools import wraps # 데코레이터를 위해 추가
 from datetime import date
 
+# flask를 구현하기 위해 app이라는 instance를 생성
 app = Flask(__name__)
 
 # --- [인증 데코레이터] ---
@@ -47,8 +50,9 @@ def token_required(f):
 
 # --- [API 엔드포인트들] ---
 
+# phq9의 수치데이터를 json형식으로 DB에 POST하는 함수
 @app.route('/phq9/submit', methods=['POST'])
-@token_required # 이 API를 호출하려면 토큰이 필요함을 의미
+@token_required # 데코레이터를 사용 --> API를 호출하려면 토큰이 필요함을 의미
 def submit_phq9():
     # 데코레이터에서 저장해 둔 현재 사용자 정보를 가져옴
     current_user_id = g.current_user['user_id']
@@ -62,16 +66,15 @@ def submit_phq9():
     try:
         with sqlite3.connect('database.sqlite') as conn:
             cursor = conn.cursor()
-            # user_id를 요청 본문이 아닌, 인증된 토큰의 소유자로 기록
             cursor.execute("INSERT INTO phq9 (user_id, total_score) VALUES (?, ?)", (current_user_id, total_score))
             conn.commit()
         return jsonify({"status": "success", "message": "PHQ-9 score submitted"}), 201
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
+# 크롬에서 가져온 데이터들을 json형식으로 list로 묶어서 대량의 정보를 DB에 POST하는 함수
 @app.route('/events/batch', methods=['POST'])
-@token_required # 이 API를 호출하려면 토큰이 필요함
+@token_required 
 def submit_events_batch():
     current_user_id = g.current_user['user_id']
     events = request.get_json()
@@ -86,7 +89,6 @@ def submit_events_batch():
                 url = event.get('url')
                 duration = event.get('duration_seconds')
                 if url and duration is not None:
-                    # user_id를 요청 본문이 아닌, 인증된 토큰의 소유자로 기록
                     cursor.execute(
                         "INSERT INTO events_raw (user_id, url, duration_seconds) VALUES (?, ?, ?)",
                         (current_user_id, url, duration)
@@ -96,11 +98,11 @@ def submit_events_batch():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
+# 머신러닝 담당자가 DB에 저장할 데이터를 모아두는 함수이자 프론트엔드 담당자가 그 정보를 GET하게 하는 함수
 @app.route('/features/daily', methods=['GET'])
-@token_required # 이 API를 호출하려면 토큰이 필요함
+@token_required 
 def get_daily_features():
-    # 쿼리 파라미터에서 user_id를 받는 대신, 인증된 사용자의 정보로 조회
+    
     current_user_id = g.current_user['user_id']
     target_date_str = request.args.get('date', default=date.today().isoformat())
 
@@ -123,6 +125,7 @@ def get_daily_features():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
+# 이 파일은 직접 실행됐을 때만 실행하라
+# 실제 파일에서 debug = True는 지워야 함
 if __name__ == '__main__':
     app.run(debug=True)

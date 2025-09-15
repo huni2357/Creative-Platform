@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
 ''')
 print("users table is ready")
 
-# phq9 테이블 생성 (이미 있다면 실행되지 않음)
+# phq9 테이블 생성
 conn.execute('''
 CREATE TABLE IF NOT EXISTS phq9 (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,8 +27,7 @@ CREATE TABLE IF NOT EXISTS phq9 (
 ''')
 print("phq9 table is ready")
 
-# --- [새로 추가된 부분] ---
-# events_raw 테이블 생성 (사용자 활동 원본 데이터)
+# events_raw 테이블 생성 
 conn.execute('''
 CREATE TABLE IF NOT EXISTS events_raw (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +38,8 @@ CREATE TABLE IF NOT EXISTS events_raw (
 );
 ''')
 print("events_raw table is ready")
-# -------------------------
+
+# features_daily 테이블 생성
 conn.execute('''
 CREATE TABLE IF NOT EXISTS features_daily (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
