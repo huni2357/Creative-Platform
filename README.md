@@ -26,19 +26,6 @@ Feature Validation은 입력 데이터의 각 feature(열/컬럼)가 올바른 �
 # 함수 호출 결과
 report, df_num, failure_df = validate_feature_table(df)
 ```
-### Quick Validate - 아래 코드로 간단하게 확인할 수 있다
-```python
-def quick_validate(df: pd.DataFrame):
-    report, df_num, failures = validate_feature_table(df)
-
-    if report.get("problems", 0) > 0:
-        if failures is not None and not failures.empty:
-            failures.to_csv("feature_validation_failures.csv", index=False)
-        raise ValueError(f"Validation failed: {report['problems']} problems. See feature_validation_failures.csv")
-
-    print("✅ quick_validate: OK")
-    return True
-```
 
 ## Backend(Server) & DB
 ---
