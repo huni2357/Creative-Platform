@@ -252,4 +252,3 @@ class DataValidator:
         })
         return self.report, self._df_num, failure_df
 
-이러면 된다고?
