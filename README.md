@@ -2,7 +2,7 @@ cat > README.md << 'EOF'
 # Creative-Platform - Team E-motion
 
 ## 데이터 처리와 머신러닝
-
+---
 ## 📊 Feature Validation Module
 
 ## 개요
