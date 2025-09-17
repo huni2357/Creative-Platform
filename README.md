@@ -8,8 +8,11 @@ cat > README.md << 'EOF'
 ### 개요
 주요 기능
 설정 기반(Config-Driven): 코드를 수정하지 않고 config 딕셔너리만 바꿔서 다양한 데이터셋에 적용할 수 있습니다.
+
 복합적 유효성 검사: 필수 컬럼, 데이터 타입, 값 범위, 날짜 논리, 그리고 max >= mean 같은 도메인 특화 규칙까지 모두 점검합니다.
+
 문제와 경고 분리: problems(심각한 오류)와 warnings(잠재적 이상)를 명확히 구분하여 보고합니다.
+
 상세 보고서: 어떤 규칙이 몇 개의 행에서 실패했는지 요약해주며, 실패한 모든 행은 feature_validation_failures.csv 파일로 자동 저장됩니다.
 ### 사용법
 검사하고자 하는 데이터를 딕셔너리로 만듭니다.
@@ -24,6 +27,7 @@ VALIDATION_CONFIG: Dict[str, List] = {
 }
 ```
 빠르게 검사하고자 하면, quick_validate()를 이용하여 검사가 가능합니다.
+
 더 자세한 결과를 얻고자 하면, validate_features()를 이용하여 검사를 합니다. 
 ```python
 report, cleaned_df, failure_df = validator.validate_features()
