@@ -2,43 +2,40 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>PHQ9 Collector Settings</title>
+    <title>Collector Settings</title>
     <style>
-      body { font-family: system-ui, sans-serif; padding: 24px; max-width: 720px }
-      .row { margin-bottom: 16px; }
-      input[type="text"] { width: 100%; padding: 8px; }
-      code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
-      ul { padding-left: 20px; }
+      body { font-family: system-ui, sans-serif; padding: 1rem; max-width: 600px; }
+      .row { margin-bottom: 1rem; }
+      label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
+      input[type="text"], input[type="number"], textarea {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      button { padding: 10px 15px; font-size: 1rem; }
     </style>
   </head>
   <body>
-    <h1>PHQ9 Privacy-Aware Usage Collector</h1>
-
+    <h1>Data Collector Settings</h1>
     <div class="row">
       <label><input type="checkbox" id="enabled" /> Enable data collection</label>
     </div>
-
     <div class="row">
-      <label>Exclude sites (one per line, domain only)</label><br/>
+      <label for="apiToken">API Token</label>
+      <input type="text" id="apiToken" placeholder="서버에서 발급받은 토큰을 여기에 붙여넣으세요" />
+    </div>
+    <div class="row">
+      <label for="exclude">Exclude sites (one per line, domain only)</label>
       <textarea id="exclude" rows="6" placeholder="example.com&#10;localhost"></textarea>
     </div>
-
     <div class="row">
-      <label>Batch upload interval (seconds)</label><br/>
+      <label for="batchSeconds">Batch upload interval (seconds)</label>
       <input type="number" id="batchSeconds" min="15" step="15" />
     </div>
-
     <div class="row">
       <button id="save">Save</button>
       <span id="status"></span>
     </div>
-
-    <h3>Privacy</h3>
-    <ul>
-      <li>URL 쿼리스트링은 저장/전송 전에 <code>stripQuery</code>로 제거됩니다.</li>
-      <li>검색어 “원문”은 절대 저장하지 않고, 검색엔진/버티컬 카테고리만 기록합니다.</li>
-    </ul>
-
     <script src="options.js"></script>
   </body>
 </html>
