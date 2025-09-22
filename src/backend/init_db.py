@@ -27,14 +27,19 @@ CREATE TABLE IF NOT EXISTS phq9 (
 ''')
 print("phq9 table is ready")
 
-# events_raw 테이블 생성 
+# events_raw 테이블 생성 (사용자 활동 원본 데이터)
+# Demo_1.csv 파일 형식에 맞춰 컬럼 확장
 conn.execute('''
 CREATE TABLE IF NOT EXISTS events_raw (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT NOT NULL,
     url TEXT NOT NULL,
+    title TEXT,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
     duration_seconds INTEGER,
-    event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tab_id INTEGER,
+    window_id INTEGER
 );
 ''')
 print("events_raw table is ready")
