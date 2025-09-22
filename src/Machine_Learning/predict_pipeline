@@ -1,0 +1,105 @@
+import pandas as pd
+import joblib
+import os
+from typing import Optional, Tuple
+
+# 사용자 정의 클래스 임포트
+from src.machine_learning.feature_validation import DataValidator, FeatureValidationError
+
+# 저장된 모델 & 스케일러 경로
+MODEL_PATH = "models/random_forest.pkl"
+SCALER_PATH = "models/data_scaler.pkl"
+
+# 훈련 시 사용된 유효성 검사 config와 동일해야 합니다.
+VALIDATION_CONFIG = {
+    "expected_columns": [
+        "period_start", "period_end",
+        "session_length_max", "session_length_mean",
+        "avg_tab_cnt", "search_freq", "ad_click_rate"
+    ],
+    "ratio_columns": ["ad_click_rate"],
+    "float_columns": ["session_length_max", "session_length_mean"],
+    "int_columns": ["avg_tab_cnt", "search_freq"],
+}
+
+# 스케일링 대상 컬럼 (학습과 동일)
+NUMERIC_COLS = ["session_length_max", "session_length_mean", "avg_tab_cnt", "search_freq", "ad_click_rate"]
+
+
+def load_model_and_scaler(model_path: str = MODEL_PATH, scaler_path: str = SCALER_PATH):
+    """저장된 모델과 스케일러 불러오기"""
+    if not os.path.exists(model_path) or not os.path.exists(scaler_path):
+        raise FileNotFoundError("모델 또는 스케일러 파일을 찾을 수 없습니다. 먼저 학습을 진행하세요.")
+    try:
+        model = joblib.load(model_path)
+        scaler = joblib.load(scaler_path)
+        return model, scaler
+    except Exception as e:
+        raise IOError(f"모델/스케일러 로딩 중 오류 발생: {e}")
+
+
+def predict_new_data(new_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    새로운 데이터를 입력받아 유효성 검사, 전처리를 거쳐 예측을 수행합니다.
+
+    Returns:
+        pd.DataFrame: 예측 라벨과 확률이 포함된 결과
+    """
+    if new_data.empty:
+        raise ValueError("입력 데이터가 비어있습니다.")
+        
+    try:
+        # === 1. 모델과 스케일러 로드 ===
+        model, scaler = load_model_and_scaler()
+        print("✅ 모델 및 스케일러 로드 완료.")
+
+        # === 2. 유효성 검사 ===
+        validator = DataValidator(new_data, VALIDATION_CONFIG)
+        report, df_validated, _ = validator.validate_features()
+        if report["problems"] > 0:
+            raise FeatureValidationError("입력 데이터 유효성 검사 실패.")
+        
+        # === 3. 전처리 ===
+        df_processed = df_validated.copy()
+        # 날짜 컬럼 제거 (학습 시 사용하지 않음)
+        df_processed = df_processed.drop(columns=["period_start", "period_end"], errors="ignore")
+        # 스케일링 적용
+        df_processed[NUMERIC_COLS] = scaler.transform(df_processed[NUMERIC_COLS])
+        print("✅ 입력 데이터 전처리 완료.")
+
+        # === 4. 예측 ===
+        predictions = model.predict(df_processed)
+        probabilities = model.predict_proba(df_processed)[:, 1] if hasattr(model, "predict_proba") else None
+
+        # === 5. 결과 반환 ===
+        results = pd.DataFrame({
+            "prediction": predictions,
+            "probability": probabilities if probabilities is not None else [None] * len(predictions)
+        })
+        return results
+
+    except (FeatureValidationError, IOError, ValueError) as e:
+        print(f"❌ 예측 파이프라인 오류: {e}")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"❌ 예상치 못한 오류: {e}")
+        return pd.DataFrame()
+
+
+if __name__ == "__main__":
+    # === 예시 입력 데이터 ===
+    sample_input = pd.DataFrame([{
+        "period_start": "2025-01-01",
+        "period_end": "2025-01-07",
+        "session_length_max": 120,
+        "session_length_mean": 45,
+        "avg_tab_cnt": 5,
+        "search_freq": 20,
+        "ad_click_rate": 0.1
+    }])
+
+    results = predict_new_data(sample_input)
+
+    if not results.empty:
+        print("\n=== 예측 결과 ===")
+        print(results)
