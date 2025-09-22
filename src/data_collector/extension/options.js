@@ -1,31 +1,35 @@
+// options.js
+const apiTokenInput = document.getElementById('apiToken');
+const enabledCheckbox = document.getElementById('enabled');
+const excludeTextarea = document.getElementById('exclude');
+const batchSecondsInput = document.getElementById('batchSeconds');
+const saveButton = document.getElementById('save');
+const statusSpan = document.getElementById('status');
 
-const $ = (id) => document.getElementById(id);
-
-async function load() {
-  chrome.storage.sync.get(
-    { enabled: true, excludeHosts: [], batchSeconds: 60 },
-    ({ enabled, excludeHosts, batchSeconds }) => {
-      $("enabled").checked = enabled;
-      $("exclude").value = (excludeHosts || []).join("\n");
-      $("batchSeconds").value = batchSeconds;
+function loadSettings() {
+  chrome.storage.local.get(
+    ['apiToken', 'enabled', 'excludeList', 'batchSeconds'],
+    (result) => {
+      apiTokenInput.value = result.apiToken || '';
+      enabledCheckbox.checked = result.enabled ?? true;
+      excludeTextarea.value = (result.excludeList || []).join('\n');
+      batchSecondsInput.value = result.batchSeconds || 60;
     }
   );
 }
 
-document.getElementById("save").addEventListener("click", () => {
-  const enabled = document.getElementById("enabled").checked;
-  const excludeHosts = document.getElementById("exclude")
-    .value
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const batchSeconds = Math.max(15, parseInt(document.getElementById("batchSeconds").value || "60", 10));
-
-  chrome.storage.sync.set({ enabled, excludeHosts, batchSeconds }, () => {
-    const status = document.getElementById("status");
-    status.textContent = "Saved!";
-    setTimeout(() => status.textContent = "", 1500);
+function saveSettings() {
+  const settings = {
+    apiToken: apiTokenInput.value.trim(),
+    enabled: enabledCheckbox.checked,
+    excludeList: excludeTextarea.value.split('\n').map(s => s.trim()).filter(Boolean),
+    batchSeconds: parseInt(batchSecondsInput.value, 10),
+  };
+  chrome.storage.local.set(settings, () => {
+    statusSpan.textContent = 'Options saved.';
+    setTimeout(() => { statusSpan.textContent = ''; }, 1500);
   });
-});
+}
 
-load();
+document.addEventListener('DOMContentLoaded', loadSettings);
+saveButton.addEventListener('click', saveSettings);
