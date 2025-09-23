@@ -4,3 +4,6 @@ __pycache__/
 *.pyd
 *.csv
 !examples/*.csv
+artifacts/
+*.pkl
+*.csv
