@@ -1,105 +1,108 @@
-import pandas as pd
-import joblib
+import argparse
 import os
-from typing import Optional, Tuple
+import pandas as pd
 
-# 사용자 정의 클래스 임포트
+# (선택) 수집 직후 1차 검증을 이미 했다면 임포트 제거 가능
 from src.machine_learning.feature_validation import DataValidator, FeatureValidationError
 
-# 저장된 모델 & 스케일러 경로
-MODEL_PATH = "models/random_forest.pkl"
-SCALER_PATH = "models/data_scaler.pkl"
-
-# 훈련 시 사용된 유효성 검사 config와 동일해야 합니다.
-VALIDATION_CONFIG = {
-    "expected_columns": [
-        "period_start", "period_end",
-        "session_length_max", "session_length_mean",
-        "avg_tab_cnt", "search_freq", "ad_click_rate"
-    ],
-    "ratio_columns": ["ad_click_rate"],
-    "float_columns": ["session_length_max", "session_length_mean"],
-    "int_columns": ["avg_tab_cnt", "search_freq"],
-}
-
-# 스케일링 대상 컬럼 (학습과 동일)
-NUMERIC_COLS = ["session_length_max", "session_length_mean", "avg_tab_cnt", "search_freq", "ad_click_rate"]
+# 표준 아티팩트 로더
+from src.machine_learning.artifacts import load_model_processor, load_threshold
 
 
-def load_model_and_scaler(model_path: str = MODEL_PATH, scaler_path: str = SCALER_PATH):
-    """저장된 모델과 스케일러 불러오기"""
-    if not os.path.exists(model_path) or not os.path.exists(scaler_path):
-        raise FileNotFoundError("모델 또는 스케일러 파일을 찾을 수 없습니다. 먼저 학습을 진행하세요.")
-    try:
-        model = joblib.load(model_path)
-        scaler = joblib.load(scaler_path)
-        return model, scaler
-    except Exception as e:
-        raise IOError(f"모델/스케일러 로딩 중 오류 발생: {e}")
-
-
-def predict_new_data(new_data: pd.DataFrame) -> pd.DataFrame:
+def predict_dataframe(
+    df: pd.DataFrame,
+    artifacts_dir: str,
+    do_validate: bool = False,
+    validation_config: dict | None = None,
+) -> pd.DataFrame:
     """
-    새로운 데이터를 입력받아 유효성 검사, 전처리를 거쳐 예측을 수행합니다.
+    artifacts_dir 에서 model.pkl, processor.pkl, threshold.json 을 읽어
+    입력 df 에 대해 확률(risk_proba)과 이진 플래그(risk_flag)를 반환.
 
-    Returns:
-        pd.DataFrame: 예측 라벨과 확률이 포함된 결과
+    Parameters
+    ----------
+    df : 입력 특징 DataFrame (라벨 없이)
+    artifacts_dir : 학습 산출물 폴더 (model.pkl, processor.pkl, threshold.json)
+    do_validate : True면 feature validation 수행 (수집단계에서 이미 했으면 False 권장)
+    validation_config : DataValidator와 동일해야 하는 설정
+
+    Returns
+    -------
+    pd.DataFrame : 원본 + ['risk_proba','risk_flag']
     """
-    if new_data.empty:
-        raise ValueError("입력 데이터가 비어있습니다.")
-        
-    try:
-        # === 1. 모델과 스케일러 로드 ===
-        model, scaler = load_model_and_scaler()
-        print("✅ 모델 및 스케일러 로드 완료.")
+    if df is None or df.empty:
+        raise ValueError("입력 데이터가 비어 있습니다.")
 
-        # === 2. 유효성 검사 ===
-        validator = DataValidator(new_data, VALIDATION_CONFIG)
-        report, df_validated, _ = validator.validate_features()
-        if report["problems"] > 0:
-            raise FeatureValidationError("입력 데이터 유효성 검사 실패.")
-        
-        # === 3. 전처리 ===
-        df_processed = df_validated.copy()
-        # 날짜 컬럼 제거 (학습 시 사용하지 않음)
-        df_processed = df_processed.drop(columns=["period_start", "period_end"], errors="ignore")
-        # 스케일링 적용
-        df_processed[NUMERIC_COLS] = scaler.transform(df_processed[NUMERIC_COLS])
-        print("✅ 입력 데이터 전처리 완료.")
+    # 0) (옵션) 검증
+    if do_validate:
+        if validation_config is None:
+            raise ValueError("do_validate=True 인 경우 validation_config 가 필요합니다.")
+        validator = DataValidator(df, validation_config)
+        report, df_valid, passed = validator.validate_features()
+        if not passed or report.get("problems", 0) > 0:
+            raise FeatureValidationError(f"유효성 검사 실패: {report}")
+        df = df_valid  # 검증 통과본으로 교체
 
-        # === 4. 예측 ===
-        predictions = model.predict(df_processed)
-        probabilities = model.predict_proba(df_processed)[:, 1] if hasattr(model, "predict_proba") else None
+    # 1) 아티팩트 로드
+    model, processor = load_model_processor(artifacts_dir)
+    thr = load_threshold(artifacts_dir, default=0.5)
 
-        # === 5. 결과 반환 ===
-        results = pd.DataFrame({
-            "prediction": predictions,
-            "probability": probabilities if probabilities is not None else [None] * len(predictions)
-        })
-        return results
+    # 2) 전처리(transform) - 스케일/인코딩/컬럼 정렬은 processor 안에 포함
+    X = processor.transform(df)
 
-    except (FeatureValidationError, IOError, ValueError) as e:
-        print(f"❌ 예측 파이프라인 오류: {e}")
-        return pd.DataFrame()
-    except Exception as e:
-        print(f"❌ 예상치 못한 오류: {e}")
-        return pd.DataFrame()
+    # 3) 예측
+    if hasattr(model, "predict_proba"):
+        proba = model.predict_proba(X)[:, 1]
+    elif hasattr(model, "decision_function"):
+        # 확률 미지원 모델용 소프트 점수 → 0~1 스케일 근사(시그모이드)
+        import numpy as np
+        scores = model.decision_function(X)
+        proba = 1 / (1 + np.exp(-scores))
+    else:
+        # 최후 방어: 하드 예측만 가능한 경우
+        hard = model.predict(X)
+        proba = hard.astype(float)
+
+    flag = (proba >= thr).astype(int)
+
+    # 4) 결과 결합
+    out = df.copy()
+    out["risk_proba"] = proba
+    out["risk_flag"] = flag
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Predict using saved artifacts (model, processor, threshold)")
+    ap.add_argument("--in", dest="in_path", required=True, help="입력 CSV 경로 (라벨 없이 특징만)")
+    ap.add_argument("--artifacts", required=True, help="artifacts 디렉토리 (model.pkl, processor.pkl, threshold.json)")
+    ap.add_argument("--out", required=True, help="출력 CSV 경로")
+    ap.add_argument("--validate", action="store_true", help="실행 시 feature validation 수행(옵션)")
+    args = ap.parse_args()
+
+    # (옵션) 유효성 검사 설정: 수집단계와 동일해야 함
+    VALIDATION_CONFIG = {
+        "expected_columns": [
+            "period_start", "period_end",
+            "session_length_max", "session_length_mean",
+            "avg_tab_cnt", "search_freq", "ad_click_rate"
+        ],
+        "ratio_columns": ["ad_click_rate"],
+        "float_columns": ["session_length_max", "session_length_mean"],
+        "int_columns": ["avg_tab_cnt", "search_freq"],
+    }
+
+    df = pd.read_csv(args.in_path)
+    res = predict_dataframe(
+        df=df,
+        artifacts_dir=args.artifacts,
+        do_validate=args.validate,
+        validation_config=VALIDATION_CONFIG if args.validate else None,
+    )
+    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
+    res.to_csv(args.out, index=False)
+    print(f"[OK] wrote {args.out} (thr from threshold.json, rows={len(res)})")
 
 
 if __name__ == "__main__":
-    # === 예시 입력 데이터 ===
-    sample_input = pd.DataFrame([{
-        "period_start": "2025-01-01",
-        "period_end": "2025-01-07",
-        "session_length_max": 120,
-        "session_length_mean": 45,
-        "avg_tab_cnt": 5,
-        "search_freq": 20,
-        "ad_click_rate": 0.1
-    }])
-
-    results = predict_new_data(sample_input)
-
-    if not results.empty:
-        print("\n=== 예측 결과 ===")
-        print(results)
+    main()
