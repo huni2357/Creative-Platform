@@ -73,16 +73,18 @@ def train_and_save_model_advanced(data_path: str, out_dir: str = "artifacts", se
 
     # 2) validate
     config = {
-        "expected_columns": [
-            "period_start","period_end",
-            "session_length_max","session_length_mean",
-            "avg_tab_cnt","search_freq","ad_click_rate",
-            "depression_label"
-        ],
-        "ratio_columns": ["ad_click_rate"],
-        "float_columns": ["session_length_max","session_length_mean"],
-        "int_columns": ["avg_tab_cnt","search_freq"],
-    }
+    "expected_columns": [
+        "total_usage_daily","total_usage_weekly",
+        "late_night_ratio","sns_ent_ratio",
+        "session_length_max","session_length_mean",
+        "bounce_ratio","avg_tab_cnt","search_freq","repeat_site_ratio",
+        "depression_label"
+    ],
+    "ratio_columns": ["late_night_ratio","sns_ent_ratio","bounce_ratio","repeat_site_ratio"],
+    "float_columns": ["total_usage_daily","total_usage_weekly","session_length_max","session_length_mean"],
+    "int_columns": ["avg_tab_cnt","search_freq"],
+    "date_columns": []
+}
     report, df_valid, _ = DataValidator(df, config).validate_features()
     if report.get("problems", 0) > 0:
         raise FeatureValidationError("유효성 검사 실패. feature_validation_failures.csv 확인 요망.")
