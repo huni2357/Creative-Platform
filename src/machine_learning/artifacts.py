@@ -1,11 +1,15 @@
-import os, json, joblib
+import os
+import json
+import joblib
 
 def load_model_processor(art_dir: str):
+    """Load model.pkl and processor.pkl from artifacts directory."""
     model = joblib.load(os.path.join(art_dir, "model.pkl"))
     processor = joblib.load(os.path.join(art_dir, "processor.pkl"))
     return model, processor
 
 def load_threshold(art_dir: str, default: float = 0.5) -> float:
+    """Read threshold from threshold.json; fallback to default if missing."""
     path = os.path.join(art_dir, "threshold.json")
     if not os.path.exists(path):
         return float(default)
