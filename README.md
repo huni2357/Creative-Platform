@@ -3,43 +3,20 @@ cat > README.md << 'EOF'
 
 ## 데이터 처리와 머신러닝
 ---
-## 📊 Feature Validation Module
+프로젝트 개요 🎯
+크롬 확장 프로그램을 통해 수집된 웹 활동 데이터(세션 길이, 검색 빈도, 탭 개수 등)를 활용하여 사용자 맞춤형 우울 위험 예측 모델을 구축합니다. 이 파이프라인은 데이터 수집부터 모델 평가 및 배포 준비까지의 전 과정을 자동화합니다.
 
-### 개요
-주요 기능
-설정 기반(Config-Driven): 코드를 수정하지 않고 config 딕셔너리만 바꿔서 다양한 데이터셋에 적용할 수 있습니다.
+파이프라인의 핵심 특징 ✨
+이 프로젝트의 파이프라인은 다음과 같은 핵심적인 기술적 강점을 가집니다.
 
-복합적 유효성 검사: 필수 컬럼, 데이터 타입, 값 범위, 날짜 논리, 그리고 max >= mean 같은 도메인 특화 규칙까지 모두 점검합니다.
+견고한 데이터 전처리: DataValidator와 DataProcessor를 사용하여 데이터 품질을 엄격하게 검증하고, 결측치 및 이상치를 처리합니다. 특히 훈련-검증-테스트 세트 분리를 통해 데이터 누출(Data Leakage)을 원천적으로 차단합니다.
 
-문제와 경고 분리: problems(심각한 오류)와 warnings(잠재적 이상)를 명확히 구분하여 보고합니다.
+모델 신뢰성 강화: CalibratedClassifierCV를 사용하여 모델이 예측한 확률이 실제 확률과 일치하도록 보정합니다. 이는 특히 민감한 우울 위험 예측에서 예측 결과의 신뢰도를 높이는 데 매우 중요합니다.
 
-상세 보고서: 어떤 규칙이 몇 개의 행에서 실패했는지 요약해주며, 실패한 모든 행은 feature_validation_failures.csv 파일로 자동 저장됩니다.
-### 사용법
-검사하고자 하는 데이터를 딕셔너리로 만듭니다.
-```python
-# validation_config.py
-from typing import Dict, List
+최적의 의사결정 임계값 튜닝: precision_recall_curve를 기반으로 F1-점수가 최대가 되는 최적의 임계값을 자동으로 탐색합니다. 이를 통해 불균형 데이터셋에서 모델 성능을 극대화합니다.
 
-VALIDATION_CONFIG: Dict[str, List] = {
-    "expected_columns": ["user_id", "total_usage_daily", "late_night_ratio"],
-    "ratio_columns": ["late_night_ratio"],
-    "int_columns": ["avg_tab_cnt"]
-}
-```
-빠르게 검사하고자 하면, quick_validate()를 이용하여 검사가 가능합니다.
+재현 가능한 산출물: 학습된 모델, 전처리기(스케일러), 최적의 임계값, 그리고 상세한 평가 지표를 .pkl 및 .json 파일로 저장합니다. 이 산출물들을 통해 언제든지 동일한 예측 환경을 재현하고 모델 성능을 추적할 수 있습니다.
 
-더 자세한 결과를 얻고자 하면, validate_features()를 이용하여 검사를 합니다. 
-```python
-report, cleaned_df, failure_df = validator.validate_features()
-
-print("\n### 전체 보고서:")
-print(report)
-
-print("\n### 실패 행:")
-print(failure_df)
-```
-
----
 
 ## Backend(Server) & DB
 ---
