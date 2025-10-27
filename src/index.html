@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E-motion: Your Digital Wellness Companion</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="real.css" />
+</head>
+<body class="antialiased">
+
+    <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <a href="#heroPanel" class="flex items-center gap-3 text-xl font-bold">
+                    <img src="https://i.imgur.com/3Y2g62B.png" alt="E-motion Logo" class="w-9 h-9"/>
+                    <span class="text-2xl">E-motion</span>
+                </a>
+                <nav class="hidden md:flex items-center gap-2 text-sm font-medium bg-white/60 backdrop-blur-lg p-2 rounded-full shadow-sm">
+                    <a href="#todayStatePanel" class="header-nav-link px-4 py-2 rounded-full" data-section="todayStatePanel">오늘의 상태</a>
+                    <a href="#guidePanel" class="header-nav-link px-4 py-2 rounded-full" data-section="guidePanel">맞춤 가이드</a>
+                    <a href="#dashboardPanel" class="header-nav-link px-4 py-2 rounded-full" data-section="dashboardPanel">인사이트</a>
+                    <a href="metrics.html" class="header-nav-link px-4 py-2 rounded-full">상세 분석</a>
+                    <a href="#aboutPanel" class="header-nav-link px-4 py-2 rounded-full" data-section="aboutPanel">팀 소개</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="fixed top-0 left-0 w-screen h-screen z-10 pointer-events-none">
+        <div id="orb-sticky-container">
+            <div class="absolute inset-0 flex justify-center items-center">
+                <svg id="mindOrb" viewBox="0 0 400 400" class="w-full h-full max-w-2xl max-h-2xl">
+                    <defs><radialGradient id="orbGradient" cx="30%" cy="30%"><stop offset="0%" /><stop offset="100%" /></radialGradient></defs>
+                    <circle cx="200" cy="200" r="150" fill="url(#orbGradient)" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-scroll-container">
+        <section id="heroPanel" class="snap-section flex-col">
+            <div class="section-content text-center">
+                <h1 class="text-5xl md:text-7xl font-black text-gray-900">데이터 속 당신의 마음,<br/>거울처럼 비추다.</h1>
+                <p class="mt-6 text-gray-600 text-lg max-w-2xl">최근 웹 활동에서 포착한 패턴으로 오늘의 컨디션을 부드럽게 안내합니다.</p>
+            </div>
+            <a href="#todayStatePanel" class="absolute bottom-16 z-20 mt-8 inline-flex items-center justify-center rounded-full px-8 py-4 text-md font-semibold text-white transition-all duration-300" style="background-color: var(--color-accent);">내 마음 상태 확인하기</a>
+        </section>
+
+        <section id="todayStatePanel" class="snap-section">
+            <div class="section-content container mx-auto px-4 w-full text-center">
+                <h2 class="text-4xl font-bold mb-4">오늘의 상태</h2>
+                <p class="text-slate-600 mb-8 max-w-2xl mx-auto" id="todayStatusMicrocopy"></p>
+                <div class="flex flex-col md:flex-row gap-8 justify-center items-stretch">
+                    <div class="content-card max-w-sm w-full">
+                        <h3 class="font-bold text-xl mb-2 text-gray-800">예측된 PHQ-9 점수</h3>
+                        <div class="text-7xl font-black" id="phqScore"></div>
+                        <div id="phqRiskContainer" class="flex items-center justify-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d=""/></svg>
+                            <span id="phqRiskLevel"></span>
+                        </div>
+                    </div>
+                    <div class="content-card max-w-sm w-full">
+                        <h3 class="font-bold text-xl mb-2 text-gray-800">빠른 셀프체크</h3>
+                        <p class="text-sm text-gray-600 mb-4">지난 하루, 의욕이나 흥미가 저하되었나요?</p>
+                        <div class="flex justify-center gap-2">
+                            <button class="flex-1 rounded-full py-2 border border-gray-300 hover:bg-gray-100">전혀</button>
+                            <button class="flex-1 rounded-full py-2 border border-gray-300 hover:bg-gray-100">조금</button>
+                            <button class="flex-1 rounded-full py-2 border border-gray-300 hover:bg-gray-100">많이</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="guidePanel" class="snap-section">
+            <div class="section-content container mx-auto px-4 w-full text-center">
+                <h2 class="text-4xl font-bold mb-4">맞춤 가이드</h2>
+                <p class="text-slate-600 mb-12 max-w-2xl mx-auto" id="guideSubtitle"></p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto" id="guideCards"></div>
+            </div>
+        </section>
+
+        <section id="dashboardPanel" class="snap-section flex-col">
+            <div class="section-content container mx-auto px-4 w-full text-center">
+                <h2 class="text-4xl font-bold mb-12 text-gray-900">주요 데이터 분석</h2>
+                <div class="flex justify-center items-center gap-8 flex-wrap">
+                    <div class="hub-bubble w-48 h-48 rounded-full flex flex-col justify-center items-center text-center p-4" data-topic="positivity">
+                        <h3 class="font-bold text-lg text-gray-800">긍정적<br/>콘텐츠 소비</h3>
+                    </div>
+                    <div class="hub-bubble w-56 h-56 rounded-full flex flex-col justify-center items-center text-center p-4" data-topic="activity">
+                        <h3 class="font-bold text-xl text-gray-800">주요 활동<br/>패턴</h3>
+                    </div>
+                    <div class="hub-bubble w-48 h-48 rounded-full flex flex-col justify-center items-center text-center p-4" data-topic="balance">
+                        <h3 class="font-bold text-lg text-gray-800">디지털-현실<br/>균형</h3>
+                    </div>
+                </div>
+                <a href="metrics.html" class="z-20 mt-12 inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-gray-800 border border-gray-300 bg-white/50 backdrop-blur-lg">상세 분석 더 알아보기</a>
+            </div>
+        </section>
+
+        <section id="aboutPanel" class="snap-section">
+            <div class="section-content container mx-auto px-4 w-full text-center">
+                <h2 class="text-4xl font-bold mb-4">만든 사람들</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 mt-12">
+                    <div class="text-center">
+                        <img src="https://placehold.co/100x100/E2E8F0/4A5568?text=P1" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-md" alt="P1"/>
+                        <h3 class="font-semibold text-xl mb-2">이름 1</h3>
+                        <p class="text-sm font-medium text-slate-500">AI/ML Research</p>
+                    </div>
+                    <div class="text-center">
+                        <img src="https://placehold.co/100x100/E2E8F0/4A5568?text=P2" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-md" alt="P2"/>
+                        <h3 class="font-semibold text-xl mb-2">이름 2</h3>
+                        <p class="text-sm font-medium text-slate-500">Backend & Extension</p>
+                    </div>
+                    <div class="text-center">
+                        <img src="https://placehold.co/100x100/E2E8F0/4A5568?text=P3" class="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white shadow-md" alt="P3"/>
+                        <h3 class="font-semibold text-xl mb-2">이름 3</h3>
+                        <p class="text-sm font-medium text-slate-500">UI/UX Design & Frontend</p>
+                    </div>
+                </div>
+                <footer class="text-sm text-slate-500"><p>© 2024 E-motion. All Rights Reserved.</p></footer>
+            </div>
+        </section>
+    </div>
+
+    <div id="detail-view">
+        <div id="detail-card">
+            <div id="detail-content" class="p-8 h-full w-full flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 id="detail-title" class="text-3xl font-bold"></h1>
+                    <button id="close-detail-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="flex-grow overflow-y-auto pr-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h2 class="text-xl font-semibold mb-4">시간에 따른 변화</h2>
+                            <div class="h-80"><canvas id="detail-chart"></canvas></div>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-semibold mb-4">주요 인사이트 및 제안</h2>
+                            <div id="detail-insights" class="space-y-4 text-gray-600"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="real.js"></script>
+</body>
+</html>
